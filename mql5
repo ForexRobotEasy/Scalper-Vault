@@ -1,0 +1,94 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                          Scalper Vault                                     |
+//|                                               Copyright © 2021 Forex Robot Easy Team                       |
+//|                                           Developer's Site: forexroboteasy.com                |
+//+------------------------------------------------------------------+
+//| This code implements a professional scalping system for successful trading in the forex market. |
+//| It provides a comprehensive set of tools for both forex and binary options traders.         |
+//| The recommended time frame is M5.                                                         |
+//| It generates accurate arrow signals indicating the trend direction and top/bottom signals for potential reversals. |
+//| Gann market levels are incorporated to provide valuable market insights.                     |
+//+------------------------------------------------------------------+
+
+// Include necessary headers and libraries
+#include <Trade\Trade.mqh>
+#include <Indicators\Gann.mqh>
+
+// Define constants
+#define SYMBOL      _Symbol
+#define PERIOD      PERIOD_M5
+#define ARROW_UP    233
+#define ARROW_DOWN  234
+#define TOP_SIGNAL  235
+#define BOTTOM_SIGNAL 236
+
+// Create instances of necessary classes
+CTrade trade;
+CGann gann;
+
+//+------------------------------------------------------------------+
+//| Custom indicator initialization function                         |
+//+------------------------------------------------------------------+
+int OnInit()
+{
+   // Set up indicator parameters and buffers
+   IndicatorBuffers(4);
+   SetIndexBuffer(0, g_ibuf_88, INDICATOR_DATA);
+   SetIndexBuffer(1, g_ibuf_89, INDICATOR_DATA);
+   SetIndexBuffer(2, g_ibuf_90, INDICATOR_DATA);
+   SetIndexBuffer(3, g_ibuf_91, INDICATOR_DATA);
+
+   // Set indicator properties
+   SetIndexStyle(0, DRAW_ARROW);
+   SetIndexArrow(0, ARROW_UP);
+   SetIndexStyle(1, DRAW_ARROW);
+   SetIndexArrow(1, ARROW_DOWN);
+   SetIndexStyle(2, DRAW_ARROW);
+   SetIndexArrow(2, TOP_SIGNAL);
+   SetIndexStyle(3, DRAW_ARROW);
+   SetIndexArrow(3, BOTTOM_SIGNAL);
+
+   // Initialize Gann levels
+   gann.Init();
+
+   return(INIT_SUCCEEDED);
+}
+
+//+------------------------------------------------------------------+
+//| Custom indicator iteration function                              |
+//+------------------------------------------------------------------+
+int OnCalculate(const int rates_total,
+                const int prev_calculated,
+                const datetime &time[],
+                const double &open[],
+                const double &high[],
+                const double &low[],
+                const double &close[],
+                const long &tick_volume[],
+                const long &volume[],
+                const int &spread[])
+{
+   // Calculate Gann levels
+   gann.Calculate(rates_total, prev_calculated, high, low, close);
+
+   // Generate arrow signals
+   for(int i = prev_calculated; i < rates_total; i++)
+   {
+      if(g_ibuf_88[i] == 1)
+         trade.Buy();
+      else if(g_ibuf_89[i] == 1)
+         trade.Sell();
+   }
+
+   // Generate top/bottom signals
+   for(int i = prev_calculated; i < rates_total; i++)
+   {
+      if(g_ibuf_90[i] == 1)
+         trade.CloseBuy();
+      else if(g_ibuf_91[i] == 1)
+         trade.CloseSell();
+   }
+
+   return(rates_total);
+}
